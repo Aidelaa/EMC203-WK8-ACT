@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Object3D : MonoBehaviour
@@ -8,9 +6,18 @@ public class Object3D : MonoBehaviour
 
     private void Update()
     {
-        float perspective = CameraComponent.focalLength / (CameraComponent.focalLength + this.itemPosition.z);
-        
-        this.transform.localScale = Vector3.one * perspective;
-        this.transform.position = new Vector2(this.itemPosition.x, this.itemPosition.y) * perspective;
+        // Ensure CameraComponent exists before using it
+        if (CameraComponent.focalLength <= 0f)
+        {
+            Debug.LogWarning("CameraComponent.focalLength is not properly set!");
+            return;
+        }
+
+        // Calculate perspective scaling
+        float depthFactor = CameraComponent.focalLength / (CameraComponent.focalLength + itemPosition.z);
+
+        // Apply transformations
+        transform.localScale = Vector3.one * depthFactor;
+        transform.position = new Vector3(itemPosition.x * depthFactor, itemPosition.y * depthFactor, transform.position.z);
     }
 }
