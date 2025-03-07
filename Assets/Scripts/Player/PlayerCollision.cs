@@ -13,46 +13,39 @@ public class PlayerCollision : MonoBehaviour
 
     private void Awake()
     {
-        TryGetComponent<PlayerHealth>(out this.playerHealth);
-        TryGetComponent<PlayerMovement>(out this.playerMovement);
-        TryGetComponent<Object3D>(out this.object3D);
+        playerHealth = GetComponent<PlayerHealth>();
+        playerMovement = GetComponent<PlayerMovement>();
+        object3D = GetComponent<Object3D>();
     }
 
     private void Update()
     {
-        if (this.playerMovement.jumping) return;
-        foreach (Object3D obstacle in this.spawner.objects)
+        if (playerMovement.jumping) return;
+
+        foreach (var obstacle in spawner.objects)
         {
             if (!obstacle) continue;
-            
-            // this might be non performant but ye
-            ObstacleDefiner obstacleDefiner = obstacle.GetComponent<ObstacleDefiner>();
-            if (!obstacleDefiner)
-                continue;
-                
-            if (obstacleDefiner.currentLane == this.playerMovement.currentLane)
+            var obstacleDefiner = obstacle.GetComponent<ObstacleDefiner>();
+            if (!obstacleDefiner || obstacleDefiner.currentLane != playerMovement.currentLane) continue;
+
+            float distance = obstacle.itemPosition.z - object3D.transform.position.z;
+            if (distance is > -150f and < -100f)
             {
-                float distance = obstacle.itemPosition.z - this.object3D.transform.position.z;
-                
-                if (distance is > -150f and < -100f)
-                {
-                    this.playerHealth.currentHealth -= 5f;
-                    Destroy(obstacle.gameObject);
-                }
+                playerHealth.Damage(5f);
+                Destroy(obstacle.gameObject);
             }
-        }    
+        }
     }
 
     private void OnGUI()
     {
-        GUIStyle style = new GUIStyle();
-        style.fontSize = 12;
-        foreach (Object3D obstacle in this.spawner.objects)
+        GUIStyle style = new GUIStyle { fontSize = 12 };
+        foreach (var obstacle in spawner.objects)
         {
             if (!obstacle) continue;
-            
-            float distance = (obstacle.itemPosition.z - this.object3D.transform.position.z);
-            Handles.Label(new Vector3(obstacle.transform.position.x, obstacle.transform.position.y, 0), $"{Mathf.Round(distance)}", style);
-        }    
+            float distance = obstacle.itemPosition.z - object3D.transform.position.z;
+            Handles.Label(new Vector3(obstacle.transform.position.x, obstacle.transform.position.y, 0), 
+                          Mathf.Round(distance).ToString(), style);
+        }
     }
 }
