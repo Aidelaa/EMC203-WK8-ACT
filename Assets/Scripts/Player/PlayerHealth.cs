@@ -1,26 +1,20 @@
-using UnityEngine;
-using UnityEngine.Events;
-
 public class PlayerHealth : MonoBehaviour
 {
     public float maxHealth = 100f;
+    public float CurrentHealth { get; private set; }
+    public UnityEvent<float> OnHealthChanged = new();
 
-    public float currentHealth
+    private void Awake() => CurrentHealth = maxHealth;
+
+    public void Damage(float amount)
     {
-        get => this._currentHealth;
-        set
-        {
-            this._currentHealth = Mathf.Clamp(value, 0, this.maxHealth);
-            
-            this.OnHealthChanged.Invoke(this._currentHealth);
-        }
+        CurrentHealth = Mathf.Clamp(CurrentHealth - amount, 0, maxHealth);
+        OnHealthChanged.Invoke(CurrentHealth);
     }
 
-    private float _currentHealth;
-    public UnityEvent<float> OnHealthChanged;
-
-    private void Awake()
+    public void Heal(float amount)
     {
-        this._currentHealth = this.maxHealth;
+        CurrentHealth = Mathf.Clamp(CurrentHealth + amount, 0, maxHealth);
+        OnHealthChanged.Invoke(CurrentHealth);
     }
 }
