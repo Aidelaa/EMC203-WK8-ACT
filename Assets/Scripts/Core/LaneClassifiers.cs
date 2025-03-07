@@ -10,21 +10,17 @@ public enum Lanes
 
 public class LaneClassifiers : MonoBehaviour
 {
-    public static int laneGaps = 3;
-    public static System.Random random = new System.Random();
+    public static int laneSpacing = 3;
 
     public static Lanes GetRandomLane()
     {
-        Array lanes = Enum.GetValues(typeof(Lanes));
-        
-        return (Lanes)lanes.GetValue(random.Next(lanes.Length));
+        Lanes[] lanes = (Lanes[])Enum.GetValues(typeof(Lanes));
+        return lanes[UnityEngine.Random.Range(0, lanes.Length)];
     }
 
-    public static (int, int) GetMinMaxLaneValues()
+    public static (int minLane, int maxLane) GetMinMaxLaneValues()
     {
-        int[] lanes = (int[])Enum.GetValues(typeof(Lanes));
-        Array.Sort(lanes);
-        
-        return (lanes[0], lanes[^1]);
+        int[] laneValues = (int[])Enum.GetValues(typeof(Lanes));
+        return (laneValues[0], laneValues[laneValues.Length - 1]);
     }
 }
