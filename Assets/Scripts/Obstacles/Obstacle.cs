@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ObstacleDefiner : MonoBehaviour
+public class Obstacle : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer spriteRenderer;
     public Lanes currentLane;
