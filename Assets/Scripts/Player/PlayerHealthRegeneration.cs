@@ -5,28 +5,25 @@ using UnityEngine;
 public class PlayerHealthRegeneration : MonoBehaviour
 {
     private PlayerHealth playerHealth;
-
-    private float duration = 1f;
+    private float regenInterval = 1f;
     private float elapsed = 0f;
-    
-    private void Awake()
-    {
-        TryGetComponent<PlayerHealth>(out this.playerHealth);
-    }
+
+    private void Awake() => playerHealth = GetComponent<PlayerHealth>();
 
     private void Update()
     {
-        if (this.playerHealth.currentHealth < this.playerHealth.maxHealth)
+        if (playerHealth.CurrentHealth < playerHealth.maxHealth)
         {
-            this.elapsed += Time.deltaTime;
-
-            if (this.elapsed >= this.duration)
+            elapsed += Time.deltaTime;
+            if (elapsed >= regenInterval)
             {
-                this.playerHealth.currentHealth += 1f;
-                this.elapsed = 0f; 
+                playerHealth.Heal(1f);
+                elapsed = 0f;
             }
         }
         else
-            this.elapsed = 0f;
+        {
+            elapsed = 0f;
+        }
     }
 }
