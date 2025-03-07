@@ -1,100 +1,68 @@
-using System.Collections;
+using System;
+using UnityEditor;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
     private Object3D object3D;
-    
     [SerializeField] private Animator animator;
     [SerializeField] public Lanes currentLane;
-    [SerializeField] private int currentLaneInt = 0;
-
+    private int currentLaneInt;
     private bool jumpCooldown = false;
-    private float jumpCooldownTimer = .25f;
-    private float jumpTimer = 1f;
-
-    public bool jumping = false;
     private float defaultYAxis = -4f;
+    private Vector2 laneBounds;
 
-    private Vector2 minMax;
     private void Awake()
     {
-        TryGetComponent<Object3D>(out this.object3D);
-        this.currentLane = (Lanes)this.currentLaneInt;
-
-        (int, int) list = LaneClassifiers.GetMinMaxLaneValues();
-        this.minMax = new Vector2(list.Item1, list.Item2);
-        
-        this.object3D.itemPosition.y = this.defaultYAxis;
-    }
-
-    private void MoveToLane()
-    {
-        this.object3D.itemPosition.x = Mathf.Lerp(this.object3D.itemPosition.x,
-            ((LaneClassifiers.laneGaps + 1f) * (int)this.currentLane), 32f * Time.deltaTime);
-    }
-
-    private IEnumerator JumpCooldown()
-    {
-        this.jumpCooldown = true;
-        yield return new WaitForSeconds(this.jumpCooldownTimer);
-        this.jumpCooldown = false;
-    }
-
-    private IEnumerator JumpDown()
-    {
-        float elapsedTime = 0f;
-
-        for (float t = 0; t < 1f; t += Time.deltaTime / this.jumpCooldownTimer)
-        {
-            elapsedTime += Time.deltaTime;
-            float progress = elapsedTime / this.jumpCooldownTimer;
-            
-            this.object3D.itemPosition.y = Mathf.Lerp(this.object3D.itemPosition.y, this.defaultYAxis, progress);
-            yield return null;
-        }
-
-        this.jumping = false;
-        this.object3D.itemPosition.y = this.defaultYAxis;
-        StartCoroutine(JumpCooldown());
-    }
-    private IEnumerator JumpUp()
-    {
-        float elapsedTime = 0f;
-        
-        this.animator.SetTrigger("Jump");
-
-        this.jumpCooldown = true;
-        for (float t = 0; t < 1f; t += Time.deltaTime / this.jumpCooldownTimer)
-        {
-            if (t > .35f) this.jumping = true;
-            elapsedTime += Time.deltaTime;
-            float progress = elapsedTime / this.jumpCooldownTimer;
-            
-            this.object3D.itemPosition.y = Mathf.Lerp(this.object3D.itemPosition.y, this.defaultYAxis + 5f, progress);
-            yield return null;
-        }
-        
-        StartCoroutine(JumpDown());
+        object3D = GetComponent<Object3D>();
+        currentLaneInt = (int)currentLane;
+        (int min, int max) = LaneClassifiers.GetMinMaxLaneValues();
+        laneBounds = new Vector2(min, max);
+        object3D.itemPosition.y = defaultYAxis;
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            this.currentLaneInt = (int)Mathf.Clamp(this.currentLaneInt - 1, this.minMax.x, this.minMax.y);
-            this.animator.SetTrigger("MoveLeft");
-        }
-        else if (Input.GetKeyDown(KeyCode.D))
-        {
-            this.currentLaneInt = (int)Mathf.Clamp(this.currentLaneInt + 1, this.minMax.x, this.minMax.y);
-            this.animator.SetTrigger("MoveRight");
-        }
-
-        if (Input.GetKeyDown(KeyCode.Space) && !this.jumpCooldown)
-            StartCoroutine(JumpUp());
-            
-        this.currentLane = (Lanes)this.currentLaneInt;
+        if (Input.GetKeyDown(KeyCode.A)) MoveLane(-1);
+        else if (Input.GetKeyDown(KeyCode.D)) MoveLane(1);
+        if (Input.GetKeyDown(KeyCode.Space) && !jumpCooldown) StartCoroutine(JumpSequence());
         MoveToLane();
+    }
+
+    private void MoveLane(int direction)
+    {
+        currentLaneInt = Mathf.Clamp(currentLaneInt + direction, (int)laneBounds.x, (int)laneBounds.y);
+        animator.SetTrigger(direction < 0 ? "MoveLeft" : "MoveRight");
+        currentLane = (Lanes)currentLaneInt;
+    }
+
+    private void MoveToLane()
+    {
+        object3D.itemPosition.x = Mathf.Lerp(object3D.itemPosition.x, 
+            ((LaneClassifiers.laneGaps + 1f) * (int)currentLane), 32f * Time.deltaTime);
+    }
+
+    private IEnumerator JumpSequence()
+    {
+        jumpCooldown = true;
+        animator.SetTrigger("Jump");
+        float jumpHeight = defaultYAxis + 5f;
+
+        yield return LerpPositionY(defaultYAxis, jumpHeight, 0.25f);
+        yield return new WaitForSeconds(0.1f);
+        yield return LerpPositionY(jumpHeight, defaultYAxis, 0.25f);
+
+        jumpCooldown = false;
+    }
+
+    private IEnumerator LerpPositionY(float startY, float endY, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            object3D.itemPosition.y = Mathf.Lerp(startY, endY, elapsed / duration);
+            yield return null;
+        }
     }
 }
